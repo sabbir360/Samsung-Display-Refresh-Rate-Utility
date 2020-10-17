@@ -8,7 +8,9 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -22,10 +24,18 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
+
+
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static int CODE_WRITE_SETTINGS_PERMISSION = 41;
     TextView tv_refresh_rate;
     Display display;
     Utility utility;
@@ -33,8 +43,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        GetPermission();
+
+
         //https://stackoverflow.com/questions/32083410/cant-get-write-settings-permission
-//        requestPermissions();
+
         display = ((WindowManager) Objects.requireNonNull(getSystemService(Context.WINDOW_SERVICE))).getDefaultDisplay();
         utility = new Utility();
 
@@ -45,52 +59,26 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void GetPermission(){
+        if(!Settings.System.canWrite(this)){
+            Toast.makeText(getApplicationContext(),
+                    "App will not work without the this permission, restart and allow!",
+                    Toast.LENGTH_LONG).show();
 
-    private void requestPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                    Manifest.permission.WRITE_SETTINGS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.WRITE_SETTINGS}, 1);
-            }else{
-                Toast.makeText(this, "Permission Required", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
+            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS,  Uri.parse("package:" + getPackageName()));
 
-    /*public static void CheckRequiredPermissionCode(Activity context){
-        boolean permission;
-        permission = Settings.System.canWrite(context);
-        if (permission) {
-            Toast.makeText(context, "Write Permission Found!", Toast.LENGTH_SHORT).show();
-        }  else {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-            intent.setData(Uri.parse("package:" + context.getPackageName()));
-            context.startActivityForResult(intent, MainActivity.CODE_WRITE_SETTINGS_PERMISSION);
-        }
-    }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                startActivity(intent);
+            startActivityForResult(intent, MainActivity.CODE_WRITE_SETTINGS_PERMISSION);
 
-    @SuppressLint("NewApi")
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == MainActivity.CODE_WRITE_SETTINGS_PERMISSION && Settings.System.canWrite(this)){
-            Log.d("TAG", "MainActivity.CODE_WRITE_SETTINGS_PERMISSION success");
-            Toast.makeText(this, "Write Permission Found!", Toast.LENGTH_SHORT).show();
         }else{
-            CheckRequiredPermissionCode(this);
+            Toast.makeText(getApplicationContext(),
+                    "Thanks for permission, its safe!",
+                    Toast.LENGTH_LONG).show();
         }
+
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == MainActivity.CODE_WRITE_SETTINGS_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Write Permission Found!", Toast.LENGTH_SHORT).show();
-        }else {
-            Toast.makeText(this, "Write Permission Found!", Toast.LENGTH_SHORT).show();
-        }
-    }*/
 
     public void onSet48HZ(View view) {
         if (utility.setRefreshRate(this, "48"))
